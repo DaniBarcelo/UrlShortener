@@ -18,6 +18,21 @@ import urlshortener.service.ShortURLService;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.Reader;
+import java.nio.file.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.*;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
+import com.opencsv.*;
+
+
+
+
 @RestController
 public class UrlShortenerController {
   private final ShortURLService shortUrlService;
@@ -58,6 +73,8 @@ public class UrlShortenerController {
     }
   }
 
+
+
   // CSV function
   @RequestMapping(value = "/csv", method = RequestMethod.POST)
   public ResponseEntity<ShortURL> shortenerWithCSV(@RequestParam("file") MultipartFile file,
@@ -68,9 +85,37 @@ public class UrlShortenerController {
     System.out.println("En funcion csv");
     // validate file
     if (file.isEmpty()) {
+      System.out.println("Fichero vacio");
       return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     } else {
-      return new ResponseEntity<>(HttpStatus.CREATED);
+      try{
+        Reader reader = new InputStreamReader(file.getInputStream());
+        CSVReader csvReader = new CSVReader(reader);
+        String[] fila = null;
+        
+        //Mostrar contenido CSV
+        while((fila = csvReader.readNext()) != null) {
+            String url = fila[0];
+            System.out.println(url);
+            //procesar linea, recortar url
+            UrlValidator urlValidator = new UrlValidator(new String[] {"http",
+            "https"});
+            if (urlValidator.isValid(url)) {
+              ShortURL su = shortUrlService.save(url, sponsor, request.getRemoteAddr());
+              System.out.println("URL " + url + " ---> " + su.getUri());
+            } else {
+              System.out.println("URL " + url + " invalid");
+            }
+        }
+        csvReader.close();
+        // save URL list on model
+        return new ResponseEntity<>(HttpStatus.CREATED);
+
+      } catch (Exception ex) {
+          System.out.println("An error occurred while processing the CSV file.");
+          return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+
+      }
     }
   }
 

@@ -38,7 +38,7 @@ $(document).ready(
                         $("#result").html(
                             "<div class='alert alert-success lead'>OK</div>");
                     },
-                    error: function() {
+                    error: function(msg) {
                         $("#result").html(
                             "<div class='alert alert-danger lead'>ERROR</div>");
                     }

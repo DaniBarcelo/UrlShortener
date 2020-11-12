@@ -89,26 +89,41 @@ public class UrlShortenerController {
       return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     } else {
       try{
+        //Fichero lectura
         Reader reader = new InputStreamReader(file.getInputStream());
-        CSVReader csvReader = new CSVReader(reader);
+        CSVReader csvReader = new CSVReaderBuilder(reader).withSkipLines(1).build();
         String[] fila = null;
+
+        //Fichero escritura
+        String archCSV = "./shortened-URLs.csv";
+        String [] headersWrite = {"url", "shortened URL"};
+
+        Writer writer = new FileWriter(archCSV);
+        CSVWriter csvWriter = new CSVWriter(writer, ',' , CSVWriter.NO_QUOTE_CHARACTER);
+        csvWriter.writeNext(headersWrite);
         
         //Mostrar contenido CSV
         while((fila = csvReader.readNext()) != null) {
             String url = fila[0];
             System.out.println(url);
-            //procesar linea, recortar url
+
+            //Procesar linea, recortar url
             UrlValidator urlValidator = new UrlValidator(new String[] {"http",
             "https"});
             if (urlValidator.isValid(url)) {
               ShortURL su = shortUrlService.save(url, sponsor, request.getRemoteAddr());
-              System.out.println("URL " + url + " ---> " + su.getUri());
+              String shortenedUri = su.getUri().toString();
+              System.out.println("URL " + url + " ---> " + shortenedUri);
+
+              //Escribir url
+              String [] dataWrite = {url, shortenedUri};
+              csvWriter.writeNext(dataWrite);
             } else {
               System.out.println("URL " + url + " invalid");
             }
         }
+        csvWriter.close();
         csvReader.close();
-        // save URL list on model
         return new ResponseEntity<>(HttpStatus.CREATED);
 
       } catch (Exception ex) {

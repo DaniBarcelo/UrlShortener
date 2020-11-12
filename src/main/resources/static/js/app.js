@@ -36,7 +36,7 @@ $(document).ready(
                     cache: false,
                     success: function(msg) {
                         $("#result").html(
-                            "<div class='alert alert-success lead'>OK</div>");
+                            "<div class='alert alert-success lead'>Generated CSV in root folder! :)</div>");
                     },
                     error: function(msg) {
                         $("#result").html(

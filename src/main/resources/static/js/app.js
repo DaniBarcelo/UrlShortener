@@ -14,6 +14,12 @@ $(document).ready(
                             "'>" +
                             msg.uri +
                             "</a></div>");
+                        // Generate the link that would beused to generate the QR Code
+                        let finalURL = 'https://chart.googleapis.com/chart?cht=qr&chl=' + msg.uri +
+                            '&chs=200x200&chld=L|0'
+
+                        // Replace the src of the image with the QR code
+                        $('.qr-code').attr('src', finalURL);
                     },
                     error: function() {
                         $("#result").html(

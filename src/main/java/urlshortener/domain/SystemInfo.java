@@ -1,41 +1,37 @@
 package urlshortener.domain;
 
- import java.net.URI;
- import java.util.List;
+import com.sun.tools.javac.util.Pair;
 
- public class SystemInfo {
-     private Long numUsers;
-     private Long numClicks;
-     private Long numUris;
-     private List<URI> topUris;
+import java.net.URI;
+import java.util.List;
 
-     public SystemInfo(Long numUsers, Long numClicks, Long numUris) {
-         this.numUsers = numUsers;
-         this.numClicks = numClicks;
-         this.numUris = numUris;
-     }
+public class SystemInfo {
+    private Long numUsers;
+    private Long numClicks;
+    private Long numUris;
+ 
 
-
-     public SystemInfo(Long numUsers, Long numClicks, Long numUris, List<URI> topUris) {
-         this.numUsers = numUsers;
-         this.numClicks = numClicks;
-         this.numUris = numUris;
-         this.topUris = topUris;
-     }
-
-     public Long getNumUsers() {
-         return numUsers;
-     }
-
-     public Long getNumClicks() {
-         return numClicks;
-     }
+    public SystemInfo(Long numUris, Long numClicks, Long numUsers) {
+        this.numUris = numUris;
+        this.numClicks = numClicks;
+        this.numUsers = numUsers;
+        
+        
+    }
 
      public Long getNumUris() {
-         return numUris;
-     }
+            return numUris;
+        }
+   
+    public Long getNumClicks() {
+        return numClicks;
+    }
 
-     public List<URI> getTopUris() {
-         return topUris;
-     }
- }
+    public Long getNumUsers() {
+        return numUsers;
+    }
+
+
+
+
+}

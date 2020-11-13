@@ -32,4 +32,9 @@ public class PersistenceConfiguration {
     return new ClickRepositoryImpl(jdbc);
   }
 
+  @Bean
+  SystemInfoRepository systemInfoRepository(){
+    return new SystemInfoRepositoryImpl(jdbc);
+  }
+
 }

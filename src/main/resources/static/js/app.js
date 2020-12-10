@@ -6,6 +6,7 @@ $(document).ready(
                 $.ajax({
                     type: "POST",
                     url: "/link",
+                    cache: true,
                     data: $(this).serialize(),
                     success: function(msg) {
                         $("#result").html(
@@ -13,13 +14,13 @@ $(document).ready(
                             msg.uri +
                             "'>" +
                             msg.uri +
-                            "</a></div>");
+                            "</a></div><img src='data:image/png;base64,"+ msg.qr +"' class='qr-code img-thumbnail img-responsive' />");
                         // Generate the link that would beused to generate the QR Code
-                        let finalURL = 'https://chart.googleapis.com/chart?cht=qr&chl=' + msg.uri +
-                            '&chs=200x200&chld=L|0'
+                        //let finalURL = 'https://chart.googleapis.com/chart?cht=qr&chl=' + msg.uri +
+                        //   '&chs=200x200&chld=L|0'
 
                         // Replace the src of the image with the QR code
-                        $('.qr-code').attr('src', finalURL);
+                        //$('.qr-code').attr('src', finalURL);
                     },
                     error: function() {
                         $("#result").html(
@@ -27,7 +28,6 @@ $(document).ready(
                     }
                 });
             });
-
 
         $("#csv").submit(
             function(event) {

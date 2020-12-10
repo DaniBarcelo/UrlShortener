@@ -14,6 +14,14 @@ import org.springframework.web.bind.annotation.RestController;
 import urlshortener.domain.ShortURL;
 import urlshortener.service.ClickService;
 import urlshortener.service.ShortURLService;
+//QR
+import com.google.zxing.qrcode.QRCodeWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 
 
 import org.springframework.web.multipart.MultipartFile;
@@ -45,8 +53,7 @@ public class UrlShortenerController {
   }
 
   @RequestMapping(value = "/{id:(?!link|index).*}", method = RequestMethod.GET)
-  public ResponseEntity<?> redirectTo(@PathVariable String id,
-                                      HttpServletRequest request) {
+  public ResponseEntity<?> redirectTo(@PathVariable String id, HttpServletRequest request) {
     ShortURL l = shortUrlService.findByKey(id);
     if (l != null) {
       clickService.saveClick(id, extractIP(request));
@@ -57,14 +64,16 @@ public class UrlShortenerController {
   }
 
   @RequestMapping(value = "/link", method = RequestMethod.POST)
-  public ResponseEntity<ShortURL> shortener(@RequestParam("url") String url,
-                                            @RequestParam(value = "sponsor", required = false)
-                                                String sponsor,
-                                            HttpServletRequest request) {
-    UrlValidator urlValidator = new UrlValidator(new String[] {"http",
-        "https"});
+  public ResponseEntity<ShortURL> shortener(@RequestParam("url") String url, @RequestParam(value = "sponsor", required = false) String sponsor, HttpServletRequest request) throws IOException, WriterException {
+    UrlValidator urlValidator = new UrlValidator(new String[] {"http", "https"});
     if (urlValidator.isValid(url)) {
       ShortURL su = shortUrlService.save(url, sponsor, request.getRemoteAddr());
+      QRCodeWriter qrCodeWriter = new QRCodeWriter();
+      BitMatrix bitMatrix = qrCodeWriter.encode(su.getUri().toString(), BarcodeFormat.QR_CODE, 200, 200);
+      BufferedImage BI = MatrixToImageWriter.toBufferedImage(bitMatrix);
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      ImageIO.write(BI, "jpg", baos);
+      su.setQR(baos.toByteArray());
       HttpHeaders h = new HttpHeaders();
       h.setLocation(su.getUri());
       return new ResponseEntity<>(su, h, HttpStatus.CREATED);

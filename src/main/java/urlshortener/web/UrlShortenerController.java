@@ -18,10 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 import urlshortener.domain.ShortURL;
 import urlshortener.service.ClickService;
 import urlshortener.service.ShortURLService;
-<<<<<<< HEAD
-import org.springframework.http.MediaType;
-
-=======
 //QR
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.common.BitMatrix;
@@ -30,7 +26,6 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
->>>>>>> 5e49f36cf00021fffd164745dc92832d1911a50d
 
 
 import org.springframework.web.multipart.MultipartFile;

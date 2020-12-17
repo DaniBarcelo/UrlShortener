@@ -9,6 +9,7 @@ import urlshortener.domain.ShortURL;
 import urlshortener.repository.ShortURLRepository;
 import urlshortener.web.UrlShortenerController;
 
+
 @Service
 public class ShortURLService {
 
@@ -25,8 +26,7 @@ public class ShortURLService {
   public ShortURL save(String url, String sponsor, String ip) {
     ShortURL su = ShortURLBuilder.newInstance()
         .target(url)
-        .uri((String hash) -> linkTo(methodOn(UrlShortenerController.class).redirectTo(hash, null))
-            .toUri())
+        .uri((String hash) -> linkTo(methodOn(UrlShortenerController.class).redirectTo(hash, null)).toUri())
         .sponsor(sponsor)
         .createdNow()
         .randomOwner()
@@ -34,7 +34,21 @@ public class ShortURLService {
         .treatAsSafe()
         .ip(ip)
         .unknownCountry()
+        .qr()
+        .qrUrl()
         .build();
     return shortURLRepository.save(su);
+  }
+
+  public boolean existShortURLByUri(String uri){
+    return shortURLRepository.existShortURLByUri(uri);
+  }
+
+  public void setQr(ShortURL urlSafe, String newQr){
+    shortURLRepository.setQr(urlSafe, newQr);
+  }
+
+  public String getQrcode(String hash){
+    return shortURLRepository.findByKey(hash).getQr();
   }
 }

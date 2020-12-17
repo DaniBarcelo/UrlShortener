@@ -26,7 +26,11 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
-
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
+import java.util.Base64;
+//CSV
+import org.springframework.http.MediaType;
 
 import org.springframework.web.multipart.MultipartFile;
 
@@ -63,6 +67,32 @@ public class UrlShortenerController {
     this.clickService = clickService;
   }
 
+  private static String generateQRCodeImage(String uri,int width, int height)
+          throws WriterException, IOException {
+      QRCodeWriter qrCodeWriter = new QRCodeWriter();
+      BitMatrix bitMatrix = qrCodeWriter.encode(uri, BarcodeFormat.QR_CODE, width, height);
+      BufferedImage new_qr = MatrixToImageWriter.toBufferedImage(bitMatrix);
+      ByteArrayOutputStream bos = new ByteArrayOutputStream();
+      ImageIO.write(new_qr,"png",bos);
+      byte[] qr_b = bos.toByteArray();
+      qr_b = Base64.getEncoder().encode(qr_b);
+      String qr = new String(qr_b);
+      return qr;
+  }
+
+  @Async  //Generar QR de forma asincrona
+  public void generarQR(ShortURL su){  
+    System.out.println(Thread.currentThread().getName());
+    try {
+      String qr = generateQRCodeImage(su.getUri().toString(),250,250);
+      shortUrlService.setQr(su, qr);
+    } catch (WriterException e) {
+        System.out.println(e.getMessage());
+    } catch (IOException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+
   @RequestMapping(value = "/{id:(?!link|index).*}", method = RequestMethod.GET)
   public ResponseEntity<?> redirectTo(@PathVariable String id, HttpServletRequest request) {
     ShortURL l = shortUrlService.findByKey(id);
@@ -74,19 +104,35 @@ public class UrlShortenerController {
     }
   }
 
+  @RequestMapping(value = "/qr/{id}", method = RequestMethod.GET, produces = MediaType.IMAGE_JPEG_VALUE)
+  public ResponseEntity<byte[]> takeQR (@PathVariable String id) throws IOException {
+      //Generamos el array de Byte a partir del string del qr
+      ShortURL su = shortUrlService.findByKey(id);
+      String aux = su.getQr();
+      byte[] bytes = Base64.getDecoder().decode(aux);
+  
+      return ResponseEntity
+      .ok()
+      .contentType(MediaType.IMAGE_JPEG)
+      .body(bytes);
+  } 
+
   @RequestMapping(value = "/link", method = RequestMethod.POST)
-  public ResponseEntity<ShortURL> shortener(@RequestParam("url") String url, @RequestParam(value = "sponsor", required = false) String sponsor, HttpServletRequest request) throws IOException, WriterException {
+  public ResponseEntity<ShortURL> shortener(@RequestParam("url") String url, @RequestParam(value = "sponsor", required = false) String sponsor, @RequestParam(value = "qr", required = false) String checkboxValue, HttpServletRequest request) throws IOException, WriterException {
     UrlValidator urlValidator = new UrlValidator(new String[] {"http", "https"});
     if (urlValidator.isValid(url)) {
       ShortURL su = shortUrlService.save(url, sponsor, request.getRemoteAddr());
-      QRCodeWriter qrCodeWriter = new QRCodeWriter();
-      BitMatrix bitMatrix = qrCodeWriter.encode(su.getUri().toString(), BarcodeFormat.QR_CODE, 200, 200);
-      BufferedImage BI = MatrixToImageWriter.toBufferedImage(bitMatrix);
-      ByteArrayOutputStream baos = new ByteArrayOutputStream();
-      ImageIO.write(BI, "jpg", baos);
-      su.setQR(baos.toByteArray());
       HttpHeaders h = new HttpHeaders();
       h.setLocation(su.getUri());
+      if (checkboxValue != null ){     
+        su.setQrUrl("http://localhost:8080/qr/"+su.getHash());
+        if (!shortUrlService.existShortURLByUri(su.getHash())){ //Generar QR si no existe
+          generarQR(su);
+        }
+      }
+      else{
+        su.setQrUrl(null);
+      }
       return new ResponseEntity<>(su, h, HttpStatus.CREATED);
     } else {
       return new ResponseEntity<>(HttpStatus.BAD_REQUEST);

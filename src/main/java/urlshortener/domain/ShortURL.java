@@ -15,11 +15,13 @@ public class ShortURL {
   private Boolean safe;
   private String ip;
   private String country;
-  private byte[] qr;
+  private String qr;
+  private String qrUrl;
+
 
   public ShortURL(String hash, String target, URI uri, String sponsor,
                   Date created, String owner, Integer mode, Boolean safe, String ip,
-                  String country) {
+                  String country,String qr, String qrUrl) {
     this.hash = hash;
     this.target = target;
     this.uri = uri;
@@ -30,6 +32,8 @@ public class ShortURL {
     this.safe = safe;
     this.ip = ip;
     this.country = country;
+    this.qr = qr;
+    this.qrUrl = qrUrl;
   }
 
   public ShortURL() {
@@ -115,11 +119,19 @@ public class ShortURL {
     this.country = country;
   }
 
-  public byte[] getQR() {
+  public String getQr(){
     return qr;
   }
 
-  public void setQR(byte[] qr) {
-    this.qr = qr;
+  public void setQr(String newQr) {
+    this.qr = newQr;
+  }
+
+  public String getQrUrl(){
+    return qrUrl;
+  }
+
+  public void setQrUrl(String newQrUrl) {
+    this.qrUrl = newQrUrl;
   }
 }

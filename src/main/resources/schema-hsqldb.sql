@@ -15,7 +15,9 @@ CREATE TABLE SHORTURL
     MODE    INTEGER,                 -- Redirect mode
     SAFE    BOOLEAN,                 -- Safe target
     IP      VARCHAR(20),             -- IP
-    COUNTRY VARCHAR(50)              -- Country
+    COUNTRY VARCHAR(50),              -- Country
+    QR      VARCHAR(2048),           -- Qr on string
+    QRURL  VARCHAR(512)             -- Qr link
 );
 
 -- Click

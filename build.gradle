@@ -19,6 +19,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-hateoas'
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
+    //Metrics
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
     //CSV
     // implementation 'com.opencsv:opencsv:5.0'
     compile 'com.opencsv:opencsv:4.1'

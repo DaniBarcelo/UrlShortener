@@ -170,6 +170,7 @@ public class UrlShortenerController {
         //V2 escalabilidad
         //String en el que se escribe el contenido "URL, shortenedURL \n"
         StringWriter content = new StringWriter();
+        content.write("url,shortened URL\n");
         
         //Mostrar contenido CSV
         while((fila = csvReader.readNext()) != null) {
@@ -190,7 +191,6 @@ public class UrlShortenerController {
             System.out.println("URL " + url + " invalid");
           }
         }
-        // csvWriter.close();
         csvReader.close();
         System.out.println("String a enviar: " + content);
 

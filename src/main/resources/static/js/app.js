@@ -46,8 +46,8 @@ $(document).ready(
                     contentType: false,
                     cache: false,
                     success: function(msg) {
-                        console.log(msg);
-                        var blob = new Blob([msg], { type: 'text/csv' });
+                        console.log("Content recibido en cliente: " + msg.buffer);
+                        var blob = new Blob([msg.buffer], { type: 'text/csv' });
                                             const url = window.URL.createObjectURL(blob);
                                             const a = document.createElement('a');
                                             a.style.display = 'none';

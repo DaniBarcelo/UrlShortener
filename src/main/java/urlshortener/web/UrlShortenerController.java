@@ -29,10 +29,11 @@ import javax.imageio.ImageIO;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import java.util.Base64;
+
 //CSV
 import org.springframework.http.MediaType;
-
 import org.springframework.web.multipart.MultipartFile;
+import java.io.StringWriter;
 
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -142,7 +143,7 @@ public class UrlShortenerController {
 
 
   // CSV function ,
-  @RequestMapping(value = "/csv", method = RequestMethod.POST, produces="application/csv")
+  @RequestMapping(value = "/csv", method = RequestMethod.POST)
   public ResponseEntity shortenerWithCSV(@RequestParam("file") MultipartFile file,
                                             @RequestParam(value = "sponsor", required = false)
                                                 String sponsor,
@@ -165,16 +166,11 @@ public class UrlShortenerController {
         LocalDateTime date = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_hh_mm_ss_SS");
         String text = date.format(formatter);
-        String filename = "shortened-URLs-" + text + ".csv";
-        String csvFolder = "./files/";
 
-        //Fichero escritura
-        String archCSV = csvFolder + filename;
-        String [] headersWrite = {"url", "shortened URL"};
-
-        Writer writer = new FileWriter(archCSV);
-        CSVWriter csvWriter = new CSVWriter(writer, ',' , CSVWriter.NO_QUOTE_CHARACTER);
-        csvWriter.writeNext(headersWrite);
+        //V2 escalabilidad
+        //String en el que se escribe el contenido "URL, shortenedURL \n"
+        StringWriter content = new StringWriter();
+        content.write("url,shortened URL\n");
         
         //Mostrar contenido CSV
         while((fila = csvReader.readNext()) != null) {
@@ -189,31 +185,17 @@ public class UrlShortenerController {
             System.out.println("URL " + url + " ---> " + shortenedUri);
 
             //Escribir url
-            String [] dataWrite = {url, shortenedUri};
-            csvWriter.writeNext(dataWrite);
+            content.write(url + ',' + shortenedUri + "\n");
+
           } else {
             System.out.println("URL " + url + " invalid");
           }
         }
-        csvWriter.close();
         csvReader.close();
+        System.out.println("String a enviar: " + content);
 
-        Path path = Paths.get(csvFolder + filename);
-        InputStreamResource resource = null;
-        try {
-          resource = new InputStreamResource(new FileInputStream(new File(path.toUri())));
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-
-       ResponseEntity res = ResponseEntity.ok()
-          .contentType(MediaType.parseMediaType("text/csv"))
-          .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-          .body(resource);
-
-        //Borro file
-
-
+        // Should give stringWriter as response and not an attachment
+        ResponseEntity res = new ResponseEntity<>(content, HttpStatus.OK);
         return res;
 
       } catch (Exception ex) {

@@ -62,6 +62,7 @@ public class UrlShortenerController {
   private final ShortURLService shortUrlService;
 
   private final ClickService clickService;
+  private final String URI_NOT_VALID_MSG = "INVALID URI";
 
   public UrlShortenerController(ShortURLService shortUrlService, ClickService clickService) {
     this.shortUrlService = shortUrlService;
@@ -142,69 +143,47 @@ public class UrlShortenerController {
 
 
 
-  // CSV function ,
+  // CSV function , escalability version.
+  // Idea: Using webSockets full-duplex connection, client reads each URI and sends it, server responses with shortened URI.
+  // Is not necessary to read or write any file.
   @RequestMapping(value = "/csv", method = RequestMethod.POST)
-  public ResponseEntity shortenerWithCSV(@RequestParam("file") MultipartFile file,
+  public ResponseEntity shortenerWithCSV(@RequestParam("file") String url,
                                             @RequestParam(value = "sponsor", required = false)
                                                 String sponsor,
                                             HttpServletRequest request, HttpServletResponse response) {
                                               
     System.out.println("En funcion csv");
-    // validate file
-    //TODO: check if format is CSV
-    if (file.isEmpty()) {
-      System.out.println("Fichero vacio");
-      return new ResponseEntity<>("Empty file", HttpStatus.BAD_REQUEST);
-    } else {
-      try{
-        //Fichero lectura
-        Reader reader = new InputStreamReader(file.getInputStream());
-        CSVReader csvReader = new CSVReaderBuilder(reader).withSkipLines(1).build();
-        String[] fila = null;
-
-        //Date to name the file
-        LocalDateTime date = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_hh_mm_ss_SS");
-        String text = date.format(formatter);
-
-        //V2 escalabilidad
-        //String en el que se escribe el contenido "URL, shortenedURL \n"
-        StringWriter content = new StringWriter();
-        content.write("url,shortened URL\n");
+    try{
+      //V2 escalabilidad
+      //String en el que se escribe el contenido "URL, shortenedURL \n"
+      StringWriter content = new StringWriter();
+      content.write("url,shortened URL\n");
+      System.out.println(url);
         
-        //Mostrar contenido CSV
-        while((fila = csvReader.readNext()) != null) {
-          String url = fila[0];
-          System.out.println(url);
-          
-          //Procesar linea, recortar url
-          UrlValidator urlValidator = new UrlValidator(new String[] {"http", "https"});
-          if (urlValidator.isValid(url)) {
-            ShortURL su = shortUrlService.save(url, sponsor, request.getRemoteAddr());
-            String shortenedUri = su.getUri().toString();
-            System.out.println("URL " + url + " ---> " + shortenedUri);
-
-            //Escribir url
-            content.write(url + ',' + shortenedUri + "\n");
-
-          } else {
-            System.out.println("URL " + url + " invalid");
-          }
-        }
-        csvReader.close();
-        System.out.println("String a enviar: " + content);
-
-        // Should give stringWriter as response and not an attachment
-        ResponseEntity res = new ResponseEntity<>(content, HttpStatus.OK);
-        return res;
-
-      } catch (Exception ex) {
-          System.out.println("Error processing the CSV file.");
-          ex.printStackTrace();
-          return new ResponseEntity<>("Error Processing the CSV file", HttpStatus.BAD_REQUEST);
+      //Procesar linea, recortar url
+      UrlValidator urlValidator = new UrlValidator(new String[] {"http", "https"});
+      if (urlValidator.isValid(url)) {
+        ShortURL su = shortUrlService.save(url, sponsor, request.getRemoteAddr());
+        String shortenedUri = su.getUri().toString();
+        System.out.println("URL " + url + " ---> " + shortenedUri);
+        //Escribir url
+        content.write(url + ',' + shortenedUri + "\n");
+      } else {
+        System.out.println("URL " + url + " invalid");
+        content.write(url + ',' + URI_NOT_VALID_MSG + "\n");
       }
+      System.out.println("String a enviar: " + content);
+      // Should give stringWriter as response and not an attachment
+      ResponseEntity res = new ResponseEntity<>(content, HttpStatus.OK);
+      return res;
+
+    } catch (Exception ex) {
+        System.out.println("Error processing the CSV file.");
+        ex.printStackTrace();
+        return new ResponseEntity<>("Error Processing the CSV file", HttpStatus.BAD_REQUEST);
     }
   }
+  
 
   private String extractIP(HttpServletRequest request) {
     return request.getRemoteAddr();

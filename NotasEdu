@@ -1,1 +1,108 @@
 StringWriter
+
+
+Version 1: reading file
+
+// CSV function ,
+  @RequestMapping(value = "/csv", method = RequestMethod.POST)
+  public ResponseEntity shortenerWithCSV(@RequestParam("file") MultipartFile file,
+                                            @RequestParam(value = "sponsor", required = false)
+                                                String sponsor,
+                                            HttpServletRequest request, HttpServletResponse response) {
+                                              
+    System.out.println("En funcion csv");
+    // validate file
+    //TODO: check if format is CSV
+    if (file.isEmpty()) {
+      System.out.println("Fichero vacio");
+      return new ResponseEntity<>("Empty file", HttpStatus.BAD_REQUEST);
+    } else {
+      try{
+        //Fichero lectura
+        Reader reader = new InputStreamReader(file.getInputStream());
+        CSVReader csvReader = new CSVReaderBuilder(reader).withSkipLines(1).build();
+        String[] fila = null;
+
+        //Date to name the file
+        LocalDateTime date = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_hh_mm_ss_SS");
+        String text = date.format(formatter);
+
+        //V2 escalabilidad
+        //String en el que se escribe el contenido "URL, shortenedURL \n"
+        StringWriter content = new StringWriter();
+        content.write("url,shortened URL\n");
+        
+        //Mostrar contenido CSV
+        while((fila = csvReader.readNext()) != null) {
+          String url = fila[0];
+          System.out.println(url);
+          
+          //Procesar linea, recortar url
+          UrlValidator urlValidator = new UrlValidator(new String[] {"http", "https"});
+          if (urlValidator.isValid(url)) {
+            ShortURL su = shortUrlService.save(url, sponsor, request.getRemoteAddr());
+            String shortenedUri = su.getUri().toString();
+            System.out.println("URL " + url + " ---> " + shortenedUri);
+
+            //Escribir url
+            content.write(url + ',' + shortenedUri + "\n");
+
+          } else {
+            System.out.println("URL " + url + " invalid");
+            content.write(url + ',' + URI_NOT_VALID_MSG + "\n");
+          }
+        }
+        csvReader.close();
+        System.out.println("String a enviar: " + content);
+
+        // Should give stringWriter as response and not an attachment
+        ResponseEntity res = new ResponseEntity<>(content, HttpStatus.OK);
+        return res;
+
+      } catch (Exception ex) {
+          System.out.println("Error processing the CSV file.");
+          ex.printStackTrace();
+          return new ResponseEntity<>("Error Processing the CSV file", HttpStatus.BAD_REQUEST);
+      }
+    }
+  }
+
+
+  app.js
+
+   $("#csv").submit(
+            function(event) {
+                event.preventDefault();
+                $.ajax({
+                    type: "POST",
+                    url: "/csv",
+                    data: new FormData(this),
+                    enctype: 'multipart/form-data',
+                    processData: false,
+                    contentType: false,
+                    cache: false,
+                    success: function(msg) {
+                        console.log("Content recibido en cliente: " + msg.buffer);
+                        var blob = new Blob([msg.buffer], { type: 'text/csv' });
+                                            const url = window.URL.createObjectURL(blob);
+                                            const a = document.createElement('a');
+                                            a.style.display = 'none';
+                                            a.href = url;
+                                            // the filename you want
+                                            a.download = 'shortenedURLs.csv';
+                                            document.body.appendChild(a);
+                                            a.click();
+                                            window.URL.revokeObjectURL(url);
+                        $("#result").html(
+                            "<div class='alert alert-success lead'>Generated CSV in root folder! :)</div>");
+                    },
+                    error: function(msg,error) {
+                     console.log(msg);
+                     console.log(error);
+                     console.log(error.body);
+                        $("#result").html(
+                            "<div class='alert alert-danger lead'>" + msg.responseText +"</div>");
+                    }
+                });
+            });

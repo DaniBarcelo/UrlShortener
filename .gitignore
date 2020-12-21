@@ -20,3 +20,9 @@ out/
 
 db/
 .history
+src/.DS_Store
+.DS_Store
+src/main/.DS_Store
+src/main/java/.DS_Store
+src/main/java/urlshortener/.DS_Store
+src/main/java/urlshortener/repository/.DS_Store

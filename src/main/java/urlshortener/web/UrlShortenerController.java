@@ -28,6 +28,7 @@ import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Base64;
 
 //CSV
@@ -65,6 +66,9 @@ import com.opencsv.*;
 
 @RestController
 public class UrlShortenerController {
+  @Autowired
+  private SimpMessagingTemplate simpMessagingTemplate;
+
   private final ShortURLService shortUrlService;
 
   private final ClickService clickService;
@@ -172,30 +176,44 @@ public class UrlShortenerController {
       content.write("url,shortened URL\n");
       System.out.println(url);
         
+      String message = "NO_MESSAGE";
       //Procesar linea, recortar url
       UrlValidator urlValidator = new UrlValidator(new String[] {"http", "https"});
       if (urlValidator.isValid(url)) {
         ShortURL su = shortUrlService.save(url, sponsor, ip);
+        System.out.println("URL " + url + " valid");
         String shortenedUri = su.getUri().toString();
         System.out.println("URL " + url + " ---> " + shortenedUri);
         //Escribir url
-        content.write(url + ',' + shortenedUri + "\n");
+        message = url + ',' + shortenedUri + "\n";
+        // content.write(url + ',' + shortenedUri + "\n");
       } else {
         System.out.println("URL " + url + " invalid");
-        content.write(url + ',' + URI_NOT_VALID_MSG + "\n");
+        message = url + ',' + URI_NOT_VALID_MSG + "\n";
+        // content.write(url + ',' + URI_NOT_VALID_MSG + "\n");
       }
-      System.out.println("String a enviar: " + content);
+      System.out.println("String a enviar: " + message);
       // Should give stringWriter as response and not an attachment
       ResponseEntity res = new ResponseEntity<>("Processing...", HttpStatus.OK);
+      sendMessage(message, sessionId);
       return res;
 
     } catch (Exception ex) {
         System.out.println("Error processing the CSV file.");
         ex.printStackTrace();
+        String message = "Error Processing the CSV file";
+        sendMessage(message, sessionId);
         return new ResponseEntity<>("Error Processing the CSV file", HttpStatus.BAD_REQUEST);
     }
   }
   
+  //Send message to simpleMessagingTemplate
+  private void sendMessage(String message, String sessionId) {
+      SimpMessageHeaderAccessor accessor = SimpMessageHeaderAccessor.create();
+      accessor.setHeader(SimpMessageHeaderAccessor.SESSION_ID_HEADER, sessionId);
+      simpMessagingTemplate.convertAndSendToUser(sessionId, "/topic/websocket-csv-client", message,
+              accessor.getMessageHeaders());
+  }
 
   private String extractIP(HttpServletRequest request) {
     return request.getRemoteAddr();

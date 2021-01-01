@@ -115,8 +115,8 @@ $(document).ready(
                         // Delete header "URI"
                         dataSplit.shift();
                         for(row of dataSplit){
-                            console.log(row);
-                            stompClient.send("/app/websocket-csv-server", {}, JSON.stringify(row));
+                            console.log("Row: " + row);
+                            stompClient.send("/app/websocket-csv-server", {}, row);
 
                             // Send row to server
                             // stompClient.send("/app/csv", {},

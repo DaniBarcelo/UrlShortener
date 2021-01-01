@@ -34,6 +34,9 @@ import java.util.Base64;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.StringWriter;
+//WebSocket
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
 
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -146,7 +149,8 @@ public class UrlShortenerController {
   // CSV function , escalability version.
   // Idea: Using webSockets full-duplex connection, client reads each URI and sends it, server responses with shortened URI.
   // Is not necessary to read or write any file.
-  @RequestMapping(value = "/csv", method = RequestMethod.POST)
+  @MessageMapping("/uploadCSV")
+  @SendTo("/topic/getCSV")
   public ResponseEntity shortenerWithCSV(@RequestParam("file") String url,
                                             @RequestParam(value = "sponsor", required = false)
                                                 String sponsor,

@@ -37,6 +37,9 @@ import java.io.StringWriter;
 //WebSocket
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -149,16 +152,21 @@ public class UrlShortenerController {
   // CSV function , escalability version.
   // Idea: Using webSockets full-duplex connection, client reads each URI and sends it, server responses with shortened URI.
   // Is not necessary to read or write any file.
-  @MessageMapping("/uploadCSV")
-  @SendTo("/topic/getCSV")
-  public ResponseEntity shortenerWithCSV(@RequestParam("file") String url,
+  @MessageMapping("/websocket-csv-server")
+  @SendTo("/topic/websocket-csv-client")
+  public ResponseEntity shortenerWithCSV(String url,
                                             @RequestParam(value = "sponsor", required = false)
                                                 String sponsor,
-                                            HttpServletRequest request, HttpServletResponse response) {
+                                            // HttpServletRequest request,
+                                            SimpMessageHeaderAccessor ha, 
+                                            @Header("simpSessionId") String sessionId
+                                            ) {
                                               
     System.out.println("En funcion csv");
     try{
       //V2 escalabilidad
+      String ip = (String) ha.getSessionAttributes().get("ip");
+
       //String en el que se escribe el contenido "URL, shortenedURL \n"
       StringWriter content = new StringWriter();
       content.write("url,shortened URL\n");
@@ -167,7 +175,7 @@ public class UrlShortenerController {
       //Procesar linea, recortar url
       UrlValidator urlValidator = new UrlValidator(new String[] {"http", "https"});
       if (urlValidator.isValid(url)) {
-        ShortURL su = shortUrlService.save(url, sponsor, request.getRemoteAddr());
+        ShortURL su = shortUrlService.save(url, sponsor, ip);
         String shortenedUri = su.getUri().toString();
         System.out.println("URL " + url + " ---> " + shortenedUri);
         //Escribir url
@@ -178,7 +186,7 @@ public class UrlShortenerController {
       }
       System.out.println("String a enviar: " + content);
       // Should give stringWriter as response and not an attachment
-      ResponseEntity res = new ResponseEntity<>(content, HttpStatus.OK);
+      ResponseEntity res = new ResponseEntity<>("Processing...", HttpStatus.OK);
       return res;
 
     } catch (Exception ex) {

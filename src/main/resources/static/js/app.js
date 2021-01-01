@@ -46,13 +46,13 @@ $(document).ready(
                 var msgToReceive = 0;
 
                 function connect() {
-                    var socket = new SockJS('/ws-uploadCSV');
+                    var socket = new SockJS('/websocketsCSV');
                     socket.binaryType = "arraybuffer";
                     stompClient = Stomp.over(socket);
                     console.log("Connecting STOMP ...");
                     stompClient.connect({}, function (frame) {
                         console.log('Connected: ' + frame);
-                        stompClient.subscribe('/user/topic/getCSV',callback);
+                        stompClient.subscribe('/user/topic/websocket-csv-client',callback);
                     });
                 }
 
@@ -73,20 +73,22 @@ $(document).ready(
                     generatedCsvContent.push(temp);
                     // Check if all messages has been received
                     if (msgReceived == msgToReceive){
-                        processed.setAttribute('data-before', 'Upload complete!');
-                        msgReceived = 0;
-                        msgToReceive = 0;
-                        download();
+                       console.log("TODOS MENSAJES RECIBIDOS");
+                       
+                       //DOWNLOAD FILE
+                       //TODO 
                     }
                     else{
-                        //Shows on screen the % processed
-                        var percent_done = Math.floor( ( msgReceived / msgToReceive ) * 100 );
-                        processed.setAttribute('data-before', `Proccesing File -  ${percent_done}% ...`);
                         msgReceived ++;
                     }
                     }else{
                     console.log("Empty msg.");
                     }
+                }
+
+                // Source: https://www.sitepoint.com/delay-sleep-pause-wait/
+                function sleep(ms) {
+                    return new Promise(resolve => setTimeout(resolve, ms));
                 }
 
                 connect();
@@ -114,7 +116,7 @@ $(document).ready(
                         dataSplit.shift();
                         for(row of dataSplit){
                             console.log(row);
-                            stompClient.send("/app/uploadCSV", {}, lines);
+                            stompClient.send("/app/websocket-csv-server", {}, JSON.stringify(row));
 
                             // Send row to server
                             // stompClient.send("/app/csv", {},

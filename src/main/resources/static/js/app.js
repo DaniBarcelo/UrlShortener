@@ -39,11 +39,11 @@ $(document).ready(
                 event.preventDefault();
 
                 //***************WEBSOCKET***************
-
-                // connect();
                 var stompClient = null;
-                var msgReceived = 0;
-                var msgToReceive = 0;
+                var numMsgReceived = 0;
+                var numMsgTotal = 0;
+                var csvContent = ""; //Array to save all content received from server
+            
 
                 function connect() {
                     var socket = new SockJS('/websocketsCSV');
@@ -56,33 +56,25 @@ $(document).ready(
                     });
                 }
 
-                // Print received messages from the server
+                // Print received messages from the server 
+                // Server returns message with format URL,SHORTED_URL 
                 callback =  function (msg) {
                     if (msg.body){
-                    console.log("Message from server: " + msg.body);
-                    console.log("msgToReceive: " + msgToReceive);
-                    console.log("msgReceived: " + msgReceived);
-
-                    // Add the message content to the csvArray object
-                    // The message is converted to array
-                    let temp = msg.body;
-                    var processed = document.querySelector('.files');
-                    // This will return an array with strings "1", "2", etc.
-                    temp = temp.split(",");
-                    // Update array content
-                    generatedCsvContent.push(temp);
-                    // Check if all messages has been received
-                    if (msgReceived == msgToReceive){
-                       console.log("TODOS MENSAJES RECIBIDOS");
-                       
-                       //DOWNLOAD FILE
-                       //TODO 
-                    }
-                    else{
-                        msgReceived ++;
-                    }
+                        console.log("Message from server: " + msg.body);
+                        console.log("numMsgReceived: " + numMsgReceived);
+                        
+                        numMsgReceived++;              
+                        csvContent += (msg.body);
+                        // Check if all messages has been received
+                        if (numMsgReceived == numMsgTotal){
+                        console.log("TODOS MENSAJES RECIBIDOS");
+                        
+                            //DOWNLOAD FILE with content
+                            //TODO
+                            createFileAndDownload(csvContent);
+                        }
                     }else{
-                    console.log("Empty msg.");
+                        console.log("No mesage");
                     }
                 }
 
@@ -109,62 +101,44 @@ $(document).ready(
                         data = String.fromCharCode.apply(null,ui8a);
                         // Now we have the file as String
                         console.log("DATA:" + data);
-                        var dataSplit = data.split(/\n/);
-                        // dataSplit = dataSplit.shift();
+                        var dataSplit = data.split('\n');
+                        number = data.split(/\r\n|\r|\n/).length;
                         console.log("DATA:" + dataSplit);
                         // Delete header "URI"
                         dataSplit.shift();
+                        numMsgTotal = dataSplit.length;
+                        console.log("numMensagesToReceive: " + numMsgTotal);
                         for(row of dataSplit){
                             console.log("Row: " + row);
                             stompClient.send("/app/websocket-csv-server", {}, row);
-
-                            // Send row to server
-                            // stompClient.send("/app/csv", {},
-                            //                 JSON.stringify(row));
                         }
                     }
                 }
 
+                //Creates csv file with data in parameter "body"
+                function createFileAndDownload(body){
+                    var headersCSV = "url,shortened URL\n";
+                    stompClient.disconnect();
+                    console.log("Content recibido en cliente: " + body);
+                    var blob = new Blob([headersCSV + body], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    // the filename you want
+                    a.download = 'shortenedURLs.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
 
-                // function connect(){
-                //     //Create webSocket
-                //     var socket = new SockJS('/csv-websocket');
-                //     stompClient = Stomp.over(socket); 
-                //     stompClient.connect({}, function(frame) {
-                //         console.log('Connected: ' + frame);
-                //         stompClient.subscribe('/topic/messages', function(messageOutput) {
-                //             alert(messageOutput);
-                //             console.log("MessageOutput: "+ messageOutput);
-                //             console.log(JSON.parse(messageOutput.body));
-                //         });
-                //     }); 
-                // }
+                }
                 
 
-                // function disconnect() {
-                //     if (stompClient !== null) {
-                //         stompClient.disconnect();
-                //     }
-                //     console.log("Disconnected");
-                // }
-
-                // var reader = new FileReader();
-                // var file = document.getElementById('file').files[0]
-                // reader.readAsArrayBuffer(file);
-                // reader.onloadend = function (evt) {
-                //     // Get the Array Buffer
-                //     var data = evt.target.result;
-                //     var ui8a = new Uint8Array(data, 0);
-                //     // Grab our byte length
-                //     data = String.fromCharCode.apply(null,ui8a);
-                //     number = data.split(/\r\n|\r|\n/).length;
-                //     var rows = data.split('\n');
-                //     console.log("DATA:");
-                //     for(var i=0; i<number; i++){
-                //         console.log(rows);
-                //         stompClient.send("/app/csvfile", {},
-                //                            JSON.stringify(rows[i]));
-                //     }
-                //  }
+                function disconnect() {
+                    if (stompClient !== null) {
+                        stompClient.disconnect();
+                    }
+                    console.log("Disconnected");
+                }
             });
     });

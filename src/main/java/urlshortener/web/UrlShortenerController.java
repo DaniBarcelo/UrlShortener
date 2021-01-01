@@ -158,52 +158,48 @@ public class UrlShortenerController {
   // Is not necessary to read or write any file.
   @MessageMapping("/websocket-csv-server")
   @SendTo("/topic/websocket-csv-client")
-  public ResponseEntity shortenerWithCSV(String url,
+  public void shortenerWithCSV(String url,
                                             @RequestParam(value = "sponsor", required = false)
                                                 String sponsor,
                                             // HttpServletRequest request,
                                             SimpMessageHeaderAccessor ha, 
                                             @Header("simpSessionId") String sessionId
-                                            ) {
-                                              
-    System.out.println("En funcion csv");
+                                            ) {                   
+    System.out.println("En funcion csv con URL: ");
+    System.out.println(url);
     try{
-      //V2 escalabilidad
-      String ip = (String) ha.getSessionAttributes().get("ip");
-
-      //String en el que se escribe el contenido "URL, shortenedURL \n"
-      StringWriter content = new StringWriter();
-      content.write("url,shortened URL\n");
-      System.out.println(url);
-        
+      //V2 escalabilidad 15 puntos
+      String ip = (String) ha.getSessionAttributes().get("ip");        
       String message = "NO_MESSAGE";
-      //Procesar linea, recortar url
       UrlValidator urlValidator = new UrlValidator(new String[] {"http", "https"});
+
+      url = url.substring(0,url.length()-2);
+      
+      System.out.println("URL to validate: " + url);
+
+      //Solucion para evitar el caracter fantasma \r, no aparece en los logs, pero se inyecta en las variables 
+      System.out.println("URL without character \r: " + url);
       if (urlValidator.isValid(url)) {
+
         ShortURL su = shortUrlService.save(url, sponsor, ip);
-        System.out.println("URL " + url + " valid");
+        System.out.println("URL " + url + "is valid");
         String shortenedUri = su.getUri().toString();
         System.out.println("URL " + url + " ---> " + shortenedUri);
         //Escribir url
-        message = url + ',' + shortenedUri + "\n";
-        // content.write(url + ',' + shortenedUri + "\n");
+        message = url + ',' + shortenedUri + '\n';
+
       } else {
-        System.out.println("URL " + url + " invalid");
-        message = url + ',' + URI_NOT_VALID_MSG + "\n";
-        // content.write(url + ',' + URI_NOT_VALID_MSG + "\n");
+        System.out.println("URL " + url + "is invalid");
+        message = url + ',' + URI_NOT_VALID_MSG + '\n';
       }
       System.out.println("String a enviar: " + message);
-      // Should give stringWriter as response and not an attachment
-      ResponseEntity res = new ResponseEntity<>("Processing...", HttpStatus.OK);
       sendMessage(message, sessionId);
-      return res;
 
     } catch (Exception ex) {
         System.out.println("Error processing the CSV file.");
         ex.printStackTrace();
         String message = "Error Processing the CSV file";
         sendMessage(message, sessionId);
-        return new ResponseEntity<>("Error Processing the CSV file", HttpStatus.BAD_REQUEST);
     }
   }
   

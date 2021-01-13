@@ -117,16 +117,21 @@ public class UrlShortenerController {
   }
 
   @RequestMapping(value = "/qr/{id}", method = RequestMethod.GET, produces = MediaType.IMAGE_JPEG_VALUE)
-  public ResponseEntity<byte[]> takeQR (@PathVariable String id) throws IOException {
+  public ResponseEntity<?> takeQR (@PathVariable String id) throws IOException {
       //Generamos el array de Byte a partir del string del qr
       ShortURL su = shortUrlService.findByKey(id);
-      String aux = su.getQr();
-      byte[] bytes = Base64.getDecoder().decode(aux);
-  
-      return ResponseEntity
-      .ok()
-      .contentType(MediaType.IMAGE_JPEG)
-      .body(bytes);
+      if(su!=null){
+        String aux = su.getQr();
+        byte[] bytes = Base64.getDecoder().decode(aux);
+    
+        return ResponseEntity
+        .ok()
+        .contentType(MediaType.IMAGE_JPEG)
+        .body(bytes);
+      }
+      else{
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON).body("Error 400: URL de destino inalcanzable");
+      }
   } 
 
   @RequestMapping(value = "/link", method = RequestMethod.POST)

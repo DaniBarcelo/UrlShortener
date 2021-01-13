@@ -190,12 +190,12 @@ public class UrlShortenerController {
         System.out.println("URL " + url + "is valid");
         String shortenedUri = su.getUri().toString();
         System.out.println("URL " + url + " ---> " + shortenedUri);
-        //Escribir url
-        message = url + ',' + shortenedUri + '\n';
+        //Escribir url 
+        message = url + ", http://localhost:8080" + shortenedUri + ",\n";
 
       } else {
         System.out.println("URL " + url + "is invalid");
-        message = url + ',' + URI_NOT_VALID_MSG + '\n';
+        message = url + ",," + URI_NOT_VALID_MSG + "\n";
       }
       System.out.println("String a enviar: " + message);
       sendMessage(message, sessionId);

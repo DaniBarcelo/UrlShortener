@@ -70,7 +70,6 @@ $(document).ready(
                         console.log("TODOS MENSAJES RECIBIDOS");
                         
                             //DOWNLOAD FILE with content
-                            //TODO
                             createFileAndDownload(csvContent);
                         }
                     }else{
@@ -117,7 +116,7 @@ $(document).ready(
 
                 //Creates csv file with data in parameter "body"
                 function createFileAndDownload(body){
-                    var headersCSV = "url,shortened URL\n";
+                    var headersCSV = "url,shortened URL,error\n";
                     stompClient.disconnect();
                     console.log("Content recibido en cliente: " + body);
                     var blob = new Blob([headersCSV + body], { type: 'text/csv' });
@@ -130,15 +129,6 @@ $(document).ready(
                     document.body.appendChild(a);
                     a.click();
                     window.URL.revokeObjectURL(url);
-
-                }
-                
-
-                function disconnect() {
-                    if (stompClient !== null) {
-                        stompClient.disconnect();
-                    }
-                    console.log("Disconnected");
                 }
             });
     });
